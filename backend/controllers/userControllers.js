@@ -1,175 +1,161 @@
-
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
-import asyncHandler from "express-async-handler"
-import crypto from "crypto"
+import asyncHandler from "express-async-handler";
+import crypto from "crypto";
+import jwt from "jsonwebtoken"
 import { send } from '../utils/send.js';
 
-
 export const register = asyncHandler(async (req, res, next) => {
-  
-    let { username, email, password, confirmPassword } = req.body;
-    console.log(req.file);
+    let { username, email, password, confirmPassword, role } = req.body;
     
-        // Verify user is in db already, See MiddleWare
-    
-
-        //creating a new user
-
-        let newUser = await User.create({
-            username,
-            email,
-            role: req.body?.role || 'user',
-            password,
-            confirmPassword,
-            photo:req.file?.path
-        })
-        //generate token
-        let token=await generateToken(newUser._id);
-        //sending response
-        res.status(201).json({newUser,token});
-    
-})
+    let newUser = await User.create({
+        username,
+        email,
+        role: role || 'user', // Use provided role or default to 'user'
+        password,
+        confirmPassword,
+        photo: req.file?.path
+    });
+    let token = await generateToken(newUser._id);
+    res.status(201).json({ newUser, token });
+});
 
 export const login = asyncHandler(async (req, res, next) => {
-    let {  email, password} = req.body;
-   
-        //verify user is in db already
-        let existingUser=await User.findOne({email})
-        if(!existingUser){
-            throw new Error("User doesnt exist,Please Register")
-        }
-        //verify password
-        let result=await existingUser.verifyPassword(password,existingUser.password)
-        if(!result){
-            throw new Error("Password is not correct")
-        }
-        //token
-        let token=await generateToken(existingUser._id)
-        //sending response
-        res.status(200).json({username:existingUser.username,photo:existingUser.photo,email:existingUser.email,token});
-})
-
-export const updateProfile = (async (req, res, next) => {
- let {id}=req.params
- await User.findByIdAndUpdate(id,{photo:req.file?.path},{new:true})
-res.sendStatus(201)
-})
-
-
-export const forgortPassword=asyncHandler(async(req,res,next)=>{
-    const {email}=req.body;
-    let exisitingUser=await User.findOne({email})
-    if(!exisitingUser){
-        throw new Error("User doesn't exist")
-    }
-    let resetPasswordToken=crypto.randomBytes(32).toString('hex')
-    let resetPasswordTokenExpiresAt= Date.now()+ 60*60*1000 ;
-    exisitingUser.resetPasswordToken=resetPasswordToken;
-    exisitingUser.resetPasswordTokenExpiresAt=resetPasswordTokenExpiresAt;
-    //save to db
-    await exisitingUser.save({validateBeforeSave:false});
+    let { email, password } = req.body;
     
-    let resetPasswordLink= `${req.protocol}://${req.hostname}:5000/api/user/reset-password/${resetPasswordToken}`
-    let options={
-        subject:"Reset your password",
-        to:exisitingUser.email,
-        text:`This is the reset password link, this expires in 1 hour ${resetPasswordLink} click here to reset the password`,
-        html:`<!DOCTYPE html>
+    // Validate email and password
+    if (!email || !password) {
+        res.status(400);
+        throw new Error("Email and password are required");
+    }
+    if (typeof email !== 'string' || typeof password !== 'string') {
+        res.status(400);
+        throw new Error("Email and password must be strings");
+    }
+
+    let existingUser = await User.findOne({ email }).select('+password +role'); // Include both password and role
+    if (!existingUser) {
+        res.status(404);
+        throw new Error("User doesn't exist, Please Register");
+    }
+    let result = await existingUser.verifyPassword(password, existingUser.password);
+    if (!result) {
+        res.status(401);
+        throw new Error("Password is not correct");
+    }
+    let token = await generateToken(existingUser._id);
+    res.status(200).json({ username: existingUser.username, photo: existingUser.photo, email: existingUser.email, role: existingUser.role, token });
+});
+
+export const updateProfile = asyncHandler(async (req, res, next) => {
+    let { id } = req.params;
+    await User.findByIdAndUpdate(id, { photo: req.file?.path }, { new: true });
+    res.sendStatus(201);
+});
+
+export const forgortPassword = asyncHandler(async (req, res, next) => {
+    const { email } = req.body;
+    let existingUser = await User.findOne({ email });
+    if (!existingUser) {
+        throw new Error("User doesn't exist");
+    }
+    let resetPasswordToken = crypto.randomBytes(32).toString('hex');
+    let resetPasswordTokenExpiresAt = Date.now() + 60 * 60 * 1000;
+    existingUser.resetPasswordToken = resetPasswordToken;
+    existingUser.resetPasswordTokenExpiresAt = resetPasswordTokenExpiresAt;
+    await existingUser.save({ validateBeforeSave: false });
+    
+    let resetPasswordLink = `${req.protocol}://localhost:5173/reset-password/${resetPasswordToken}`;
+    let options = {
+        subject: "Reset your password",
+        to: existingUser.email,
+        text: `This is the reset password link, this expires in 1 hour ${resetPasswordLink} click here to reset the password`,
+        html: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background-color: #007bff;
-            color: #ffffff;
-            padding: 10px 0;
-            text-align: center;
-        }
-        .content {
-            margin: 20px 0;
-            text-align: center;
-        }
-        .button {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 20px 0;
-            background-color: #007bff;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 5px;
-        }
-        .footer {
-            text-align: center;
-            color: #777777;
-            font-size: 12px;
-            margin-top: 20px;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        .header { background-color: #007bff; color: #ffffff; padding: 10px 0; text-align: center; }
+        .content { margin: 20px 0; text-align: center; }
+        .button { display: inline-block; padding: 10px 20px; margin: 20px 0; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; }
+        .footer { text-align: center; color: #777777; font-size: 12px; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>Reset Your Password</h1>
-        </div>
+        <div class="header"><h1>Reset Your Password</h1></div>
         <div class="content">
             <p>We received a request to reset your password. Click the button below to reset it.</p>
             <a href="${resetPasswordLink}" class="button">Reset Password</a>
             <p>If you did not request a password reset, please ignore this email.</p>
         </div>
-        <div class="footer">
-            <p>&copy; 2023 Your Company. All rights reserved.</p>
-        </div>
+        <div class="footer"><p>© 2023 Your Company. All rights reserved.</p></div>
     </div>
 </body>
-</html>
-`
-    }
-    await send(options)
-    
+</html>`
+    };
+    await send(options);
     res.status(200).json("Reset password link sent");
-})
-
+});
 
 export const resetPassword = asyncHandler(async (req, res, next) => {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
-  
+    
     const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordTokenExpiresAt: { $gt: Date.now() }
+        resetPasswordToken: token,
+        resetPasswordTokenExpiresAt: { $gt: Date.now() }
     });
-  
+    
     if (!user) {
-      throw new Error("Token Expired");
+        throw new Error("Token Expired");
     }
-  
+    
     user.password = password;
     user.confirmPassword = confirmPassword;
     user.resetPasswordToken = undefined;
     user.resetPasswordTokenExpiresAt = undefined;
-    await user.save({validateBeforeSave:false});
-    res.status(200).send("Reset Password Is Successfull")
+    await user.save({ validateBeforeSave: false });
+    res.status(200).send("Reset Password Is Successful");
 });
 
-export const logout=asyncHandler(async(req,res)=>{
-   
-    req.userId=null;
-    res.sendStatus(200)
-})
+export const logout = asyncHandler(async (req, res) => {
+    req.userId = null;
+    res.sendStatus(200);
+});
 
+export const verifyToken = asyncHandler(async (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    console.log('Verifying token:', token);
+    if (!token) {
+        res.status(401);
+        throw new Error('No token provided');
+    }
+
+    try {
+        console.log('JWT_SECRET:', process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        console.log('Decoded token:', decoded);
+        const user = await User.findById(decoded.id).select('username email photo role');
+        if (!user) {
+            res.status(404);
+            throw new Error('User not found');
+        }
+        res.status(200).json({ user });
+    } catch (error) {
+        console.error('Token verification error - Full error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            res.status(401);
+            throw new Error('Invalid token format: ' + error.message);
+        } else if (error.name === 'TokenExpiredError') {
+            res.status(401);
+            throw new Error('Token expired: ' + error.message);
+        } else {
+            res.status(500);
+            throw new Error('Token verification failed: ' + error.message);
+        }
+    }
+});

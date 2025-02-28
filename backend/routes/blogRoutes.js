@@ -1,27 +1,26 @@
 import { Router } from "express";
-import multer from 'multer'
+import multer from 'multer';
 import storage from '../middlewares/fileUpload.js';
 import { deleteBlog, getBlog, getBlogs, postBlog, ToggleLikeBlog, updateBlog } from "../controllers/blogControllers.js";
 import { auth, checkRole } from "../middlewares/auth.js";
-import { createComment, deleteComment, getComments} from "../controllers/commentControllers.js";
-let upload=multer({storage:storage})
-let router=Router();
+import { createComment, deleteComment, getComments } from "../controllers/commentControllers.js";
 
-//public routes
-router.get("/",getBlogs);
-router.get("/:slug",getBlog);
+let upload = multer({ storage: storage });
+let router = Router();
 
-//private routes
-//private routes
-router.post("/",auth,checkRole('author','admin'),upload.single("featuredImage"),postBlog);
-router.patch("/:slug",auth,checkRole('author','admin'),upload.single("featuredImage"),updateBlog);
-router.delete("/:slug",auth,checkRole('admin','author'),deleteBlog);
+// Public routes
+router.get("/", getBlogs);
+router.get("/:slug", getBlog);
 
-router.post("/:slug/like",auth,ToggleLikeBlog);
+// Private routes
+router.post("/", auth, checkRole('author', 'admin'), upload.single("featuredImage"), postBlog);
+router.patch("/:slug", auth, checkRole('author', 'admin'), upload.single("featuredImage"), updateBlog);
+router.delete("/:slug", auth, checkRole('admin', 'author'), deleteBlog);
 
-router.post("/:slug/comments",auth,createComment)
-router.get("/:slug/comments",auth,getComments)
-router.delete("/:slug/comments/:commentId",auth,deleteComment)
+router.post("/:slug/like", auth, ToggleLikeBlog);
+
+router.post("/:slug/comments", auth, createComment);
+router.get("/:slug/comments", auth, getComments);
+router.delete("/:slug/comments/:commentId", auth, deleteComment);
 
 export default router;
-

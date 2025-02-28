@@ -47,7 +47,20 @@ function Register() {
         </Select>
       </FormControl>
       <input type="file" name="photo" accept="image/*" onChange={handleChange} style={{ marginTop: 16 }} />
-      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Register</Button>
+      <Button
+  type="submit"
+  variant="contained"
+  fullWidth
+  sx={{
+    mt: 2,
+    '&:hover': {
+      backgroundColor: '#1565c0', // Darker primary color on hover
+      transition: 'background-color 0.3s ease',
+    },
+  }}
+>
+  Register
+</Button>
     </Box>
   );
 }

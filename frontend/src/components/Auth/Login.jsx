@@ -47,7 +47,20 @@ function Login() {
         error={!!error && !password.trim()}
         helperText={error && !password.trim() ? 'Password is required' : ''}
       />
-      <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>Login</Button>
+      <Button
+        type="submit"
+        variant="contained"
+        fullWidth
+        sx={{
+          mt: 2,
+          '&:hover': {
+            backgroundColor: '#1565c0', // Darker primary color on hover
+            transition: 'background-color 0.3s ease',
+          },
+        }}
+      >
+        Login
+      </Button>
       <Box sx={{ mt: 2 }}>
         <Link to="/forgot-password">Forgot Password?</Link> | <Link to="/register">Register</Link>
       </Box>

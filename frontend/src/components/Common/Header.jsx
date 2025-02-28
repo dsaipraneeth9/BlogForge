@@ -1,17 +1,19 @@
 import { useContext } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Avatar, CircularProgress } from '@mui/material';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
-
 
 function Header() {
   const { user, logout, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
     navigate('/'); // Redirect to home or login page after logout
   };
+
+  const isActive = (path) => location.pathname === path; // Check if the current path matches
 
   if (loading) {
     return (
@@ -33,22 +35,121 @@ function Header() {
           BlogForge
         </Typography>
         <Box>
-          <Button color="inherit" component={Link} to="/">Home</Button>
-          <Button color="inherit" component={Link} to="/search">Search</Button>
+          <Button
+            color="inherit"
+            component={Link}
+            to="/"
+            sx={{
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transition: 'background-color 0.3s ease',
+              },
+              backgroundColor: isActive('/') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+              borderBottom: isActive('/') ? '2px solid white' : 'none',
+            }}
+          >
+            Home
+          </Button>
+          <Button
+            color="inherit"
+            component={Link}
+            to="/search"
+            sx={{
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transition: 'background-color 0.3s ease',
+              },
+              backgroundColor: isActive('/search') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+              borderBottom: isActive('/search') ? '2px solid white' : 'none',
+            }}
+          >
+            Search
+          </Button>
           {user ? (
             <>
-              <Button color="inherit" component={Link} to="/create-post">Create Post</Button>
-              <Button color="inherit" component={Link} to="/dashboard/author">Dashboard</Button>
+              {(user.role === 'author' || user.role === 'admin') && (
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/create-post"
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      transition: 'background-color 0.3s ease',
+                    },
+                    backgroundColor: isActive('/create-post') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    borderBottom: isActive('/create-post') ? '2px solid white' : 'none',
+                  }}
+                >
+                  Create Post
+                </Button>
+              )}
+              {(user.role === 'author' || user.role === 'admin') && (
+                <Button
+                  color="inherit"
+                  component={Link}
+                  to="/dashboard/author"
+                  sx={{
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      transition: 'background-color 0.3s ease',
+                    },
+                    backgroundColor: isActive('/dashboard/author') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                    borderBottom: isActive('/dashboard/author') ? '2px solid white' : 'none',
+                  }}
+                >
+                  Dashboard
+                </Button>
+              )}
               <Button color="inherit" component={Link} to="/profile">
-                <Avatar src={user.photo} sx={{ width: 24, height: 24, mr: 1 }} />
+                <Avatar src={user.photo} sx={{ width: 32, height: 32, mr: 1, borderRadius: '50%' }} />
                 {user.username}
               </Button>
-              <Button color="inherit" onClick={handleLogout}>Logout</Button>
+              <Button
+                color="inherit"
+                onClick={handleLogout}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    transition: 'background-color 0.3s ease',
+                  },
+                }}
+              >
+                Logout
+              </Button>
             </>
           ) : (
             <>
-              <Button color="inherit" component={Link} to="/login">Login</Button>
-              <Button color="inherit" component={Link} to="/register">Register</Button>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/login"
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    transition: 'background-color 0.3s ease',
+                  },
+                  backgroundColor: isActive('/login') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  borderBottom: isActive('/login') ? '2px solid white' : 'none',
+                }}
+              >
+                Login
+              </Button>
+              <Button
+                color="inherit"
+                component={Link}
+                to="/register"
+                sx={{
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    transition: 'background-color 0.3s ease',
+                  },
+                  backgroundColor: isActive('/register') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  borderBottom: isActive('/register') ? '2px solid white' : 'none',
+                }}
+              >
+                Register
+              </Button>
             </>
           )}
         </Box>

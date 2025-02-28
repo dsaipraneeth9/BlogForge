@@ -1,6 +1,6 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, useRef, useCallback } from 'react'; // Added useCallback for memoization
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Typography, Box, Button, Divider, CircularProgress } from '@mui/material'; // Added CircularProgress for loading
+import { Typography, Box, Button, Divider, CircularProgress } from '@mui/material';
 import { getBlog, toggleLike, deleteBlog } from '../services/api.js';
 import CommentSection from '../components/Blog/CommentSection.jsx';
 import { AuthContext } from '../contexts/AuthContext.jsx';
@@ -12,9 +12,11 @@ function BlogPost() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
+  const isFetching = useRef(false); // Ref to prevent multiple simultaneous requests
+  const fetchCount = useRef(0); // Track number of fetch attempts for debugging
 
-  // Validate slug before fetching
-  useEffect(() => {
+  // Memoize fetchBlog to prevent unnecessary re-creations
+  const fetchBlog = useCallback(async () => {
     if (!slug) {
       console.error('Slug is undefined in BlogPost');
       setError('Invalid blog URL');
@@ -22,25 +24,39 @@ function BlogPost() {
       return;
     }
 
-    const fetchBlog = async () => {
-      setIsLoading(true);
-      try {
-        console.log('Fetching blog with slug:', slug);
-        const response = await getBlog(slug);
-        setBlog(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching blog:', err);
-        setError(err.response?.data?.message || 'Failed to load blog');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (isFetching.current) {
+      console.warn('Request already in progress, skipping duplicate fetch for slug:', slug);
+      return;
+    }
+    isFetching.current = true;
+    fetchCount.current += 1;
+    console.log(`Fetching blog with slug: ${slug}, attempt #${fetchCount.current}, at: ${new Date().toISOString()}`);
+
+    try {
+      const response = await getBlog(slug);
+      setBlog(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching blog - Full error:', err);
+      setError(err.response?.data?.message || 'Failed to load blog');
+    } finally {
+      isFetching.current = false;
+      setIsLoading(false);
+    }
+  }, [slug]); // Only depend on slug for memoization
+
+  // Use useEffect with strict dependency control
+  useEffect(() => {
+    let mounted = true;
 
     fetchBlog();
-  }, [slug]);
 
-  const handleLike = async () => {
+    return () => {
+      mounted = false; // Cleanup to prevent memory leaks
+    };
+  }, [fetchBlog]); // Depend on fetchBlog, not slug directly
+
+  const handleLike = useCallback(async () => {
     if (!slug || !blog) {
       console.error('Cannot like: slug or blog is undefined');
       return;
@@ -56,9 +72,9 @@ function BlogPost() {
     } catch (error) {
       console.error('Error toggling like:', error);
     }
-  };
+  }, [slug, blog, user?.id]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!slug || !blog) {
       console.error('Cannot delete: slug or blog is undefined');
       return;
@@ -71,7 +87,7 @@ function BlogPost() {
         console.error('Error deleting blog:', error);
       }
     }
-  };
+  }, [slug, blog, navigate]);
 
   if (isLoading) {
     return (
@@ -104,9 +120,9 @@ function BlogPost() {
 
   return (
     <Box>
-      <Typography variant="h3" gutterBottom>{blog.title}</Typography>
+      <Typography variant="h3" sx={{ color: '#b8860b' }} gutterBottom>{blog.title}</Typography>
       <Typography variant="subtitle1" color="text.secondary">
-        By {blog.author?.username} | {new Date(blog.createdAt).toLocaleDateString()} | {blog.views} views
+        By <span style={{ color: '#333' }}>{blog.author?.username}</span> | {new Date(blog.createdAt).toLocaleDateString()} | {blog.views} views
       </Typography>
       {blog.featuredImage && <img src={blog.featuredImage} alt={blog.title} style={{ maxWidth: '100%', margin: '20px 0' }} />}
       <div dangerouslySetInnerHTML={{ __html: blog.content }} />
@@ -128,7 +144,6 @@ function BlogPost() {
 }
 
 export default BlogPost;
-
 
 // import { useEffect, useState, useContext } from 'react';
 // import { useParams, useNavigate, Link } from 'react-router-dom';

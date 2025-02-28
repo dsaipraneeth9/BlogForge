@@ -20,32 +20,6 @@ export const register = asyncHandler(async (req, res, next) => {
     res.status(201).json({ newUser, token });
 });
 
-export const login = asyncHandler(async (req, res, next) => {
-    let { email, password } = req.body;
-    
-    // Validate email and password
-    if (!email || !password) {
-        res.status(400);
-        throw new Error("Email and password are required");
-    }
-    if (typeof email !== 'string' || typeof password !== 'string') {
-        res.status(400);
-        throw new Error("Email and password must be strings");
-    }
-
-    let existingUser = await User.findOne({ email }).select('+password +role'); // Include both password and role
-    if (!existingUser) {
-        res.status(404);
-        throw new Error("User doesn't exist, Please Register");
-    }
-    let result = await existingUser.verifyPassword(password, existingUser.password);
-    if (!result) {
-        res.status(401);
-        throw new Error("Password is not correct");
-    }
-    let token = await generateToken(existingUser._id);
-    res.status(200).json({ username: existingUser.username, photo: existingUser.photo, email: existingUser.email, role: existingUser.role, token });
-});
 
 export const updateProfile = asyncHandler(async (req, res, next) => {
     let { id } = req.params;
@@ -133,35 +107,138 @@ export const logout = asyncHandler(async (req, res) => {
     res.sendStatus(200);
 });
 
-export const verifyToken = asyncHandler(async (req, res, next) => {
+// export const login = asyncHandler(async (req, res, next) => {
+//     let { email, password } = req.body;
+    
+//     // Validate email and password
+//     if (!email || !password) {
+//         res.status(400);
+//         throw new Error("Email and password are required");
+//     }
+//     if (typeof email !== 'string' || typeof password !== 'string') {
+//         res.status(400);
+//         throw new Error("Email and password must be strings");
+//     }
+
+//     let existingUser = await User.findOne({ email }).select('+password +role'); // Include both password and role
+//     if (!existingUser) {
+//         res.status(404);
+//         throw new Error("User doesn't exist, Please Register");
+//     }
+//     let result = await existingUser.verifyPassword(password, existingUser.password);
+//     if (!result) {
+//         res.status(401);
+//         throw new Error("Password is not correct");
+//     }
+//     let token = await generateToken(existingUser._id);
+//     res.status(200).json({ username: existingUser.username, photo: existingUser.photo, email: existingUser.email, role: existingUser.role, token });
+// });
+
+// export const verifyToken = asyncHandler(async (req, res, next) => {
+//     const token = req.headers.authorization?.split(' ')[1];
+//     console.log('Verifying token:', token);
+//     if (!token) {
+//         res.status(401);
+//         throw new Error('No token provided');
+//     }
+
+//     try {
+//         console.log('JWT_SECRET:', process.env.JWT_SECRET);
+//         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//         console.log('Decoded token:', decoded);
+//         const user = await User.findById(decoded.id).select('username email photo role');
+//         if (!user) {
+//             res.status(404);
+//             throw new Error('User not found');
+//         }
+//         res.status(200).json({ user });
+//     } catch (error) {
+//         console.error('Token verification error - Full error:', error);
+//         if (error.name === 'JsonWebTokenError') {
+//             res.status(401);
+//             throw new Error('Invalid token format: ' + error.message);
+//         } else if (error.name === 'TokenExpiredError') {
+//             res.status(401);
+//             throw new Error('Token expired: ' + error.message);
+//         } else {
+//             res.status(500);
+//             throw new Error('Token verification failed: ' + error.message);
+//         }
+//     }
+// });
+
+
+// @desc     Login
+// @route    /api/users/login
+// @access   Public
+export const login = asyncHandler(async (req, res, next) => {
+    let { email, password } = req.body;
+    
+    // Validate email and password
+    if (!email || !password) {
+      res.status(400);
+      throw new Error("Email and password are required");
+    }
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      res.status(400);
+      throw new Error("Email and password must be strings");
+    }
+  
+    let existingUser = await User.findOne({ email }).select('+password +role'); // Include both password and role
+    if (!existingUser) {
+      res.status(404);
+      throw new Error("User doesn't exist, Please Register");
+    }
+    let result = await existingUser.verifyPassword(password, existingUser.password);
+    if (!result) {
+      res.status(401);
+      throw new Error("Password is not correct");
+    }
+    let token = await generateToken(existingUser._id);
+    res.status(200).json({ 
+      user: {
+        _id: existingUser._id, // Ensure _id is included
+        username: existingUser.username, 
+        photo: existingUser.photo, 
+        email: existingUser.email, 
+        role: existingUser.role 
+      }, 
+      token 
+    });
+  });
+  
+  // @desc     Verify Token
+  // @route    /api/users/verify-token
+  // @access   Private
+  export const verifyToken = asyncHandler(async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     console.log('Verifying token:', token);
     if (!token) {
-        res.status(401);
-        throw new Error('No token provided');
+      res.status(401);
+      throw new Error('No token provided');
     }
-
+  
     try {
-        console.log('JWT_SECRET:', process.env.JWT_SECRET);
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log('Decoded token:', decoded);
-        const user = await User.findById(decoded.id).select('username email photo role');
-        if (!user) {
-            res.status(404);
-            throw new Error('User not found');
-        }
-        res.status(200).json({ user });
+      console.log('JWT_SECRET:', process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded token:', decoded);
+      const user = await User.findById(decoded.id).select('username email photo role _id');
+      if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+      }
+      res.status(200).json({ user });
     } catch (error) {
-        console.error('Token verification error - Full error:', error);
-        if (error.name === 'JsonWebTokenError') {
-            res.status(401);
-            throw new Error('Invalid token format: ' + error.message);
-        } else if (error.name === 'TokenExpiredError') {
-            res.status(401);
-            throw new Error('Token expired: ' + error.message);
-        } else {
-            res.status(500);
-            throw new Error('Token verification failed: ' + error.message);
-        }
+      console.error('Token verification error - Full error:', error);
+      if (error.name === 'JsonWebTokenError') {
+        res.status(401);
+        throw new Error('Invalid token format: ' + error.message);
+      } else if (error.name === 'TokenExpiredError') {
+        res.status(401);
+        throw new Error('Token expired: ' + error.message);
+      } else {
+        res.status(500);
+        throw new Error('Token verification failed: ' + error.message);
+      }
     }
-});
+  });

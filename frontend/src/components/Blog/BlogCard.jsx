@@ -11,7 +11,15 @@ function BlogCard({ blog }) {
   };
 
   return (
-    <Card>
+    <Card
+      sx={{
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease', // Smooth transition for scale and shadow
+        '&:hover': {
+          transform: 'scale(1.05)', // Slight scale on hover
+          boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)', // Enhanced shadow on hover
+        },
+      }}
+    >
       {blog.featuredImage && (
         <CardMedia
           component="img"
@@ -21,14 +29,28 @@ function BlogCard({ blog }) {
         />
       )}
       <CardContent>
-        <Typography variant="h6" component={Link} to={`/blog/${blog.slug}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
+        <Typography variant="h6" component={Link} to={`/blog/${blog.slug}`} sx={{ textDecoration: 'none', color: '#b8860b' }}>
           {blog.title}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          By {blog.author?.username} | {new Date(blog.createdAt).toLocaleDateString()}
+          By <span style={{ color: '#333' }}>{blog.author?.username}</span> | {new Date(blog.createdAt).toLocaleDateString()} | {blog.views} views | {blog.likes.length} likes
         </Typography>
         <Typography variant="body2">{getExcerpt(blog.content)}</Typography>
-        <Button component={Link} to={`/blog/${blog.slug}`} size="small" sx={{ mt: 1 }}>Read More</Button>
+        <Button
+          component={Link}
+          to={`/blog/${blog.slug}`}
+          size="small"
+          sx={{
+            mt: 1,
+            '&:hover': {
+              backgroundColor: '#1976d2', // Match primary color on hover
+              color: 'white',
+              transition: 'background-color 0.3s ease, color 0.3s ease',
+            },
+          }}
+        >
+          Read More
+        </Button>
       </CardContent>
     </Card>
   );

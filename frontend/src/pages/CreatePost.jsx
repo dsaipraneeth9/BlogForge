@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Typography, Alert, Box } from '@mui/material';
-import BlogEditor from '../components/Blog/BlogEditor.jsx';
+// import BlogEditor from '../components/Blog/BlogEditor.jsx';
 import { createBlog, updateBlog, getBlog } from '../services/api.js';
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext.jsx';
+import SafeBlogEditor from '../components/Blog/BlogEditor.jsx';
 
 function CreatePost() {
   const [searchParams] = useSearchParams();
@@ -48,7 +49,7 @@ function CreatePost() {
       <Typography variant="h4" gutterBottom>{slug ? 'Edit Post' : 'Create New Post'}</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {console.log('Rendering CreatePost with initialData:', initialData, 'User:', user)}
-      <BlogEditor onSubmit={handleSubmit} initialData={initialData} />
+      <SafeBlogEditor onSubmit={handleSubmit} initialData={initialData} />
     </Box>
   );
 }

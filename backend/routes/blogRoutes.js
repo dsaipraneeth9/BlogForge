@@ -17,6 +17,29 @@ router.post("/", auth, checkRole('author', 'admin'), upload.single("featuredImag
 router.patch("/:slug", auth, checkRole('author', 'admin'), upload.single("featuredImage"), updateBlog);
 router.delete("/:slug", auth, checkRole('admin', 'author'), deleteBlog);
 
+// router.put('/slug/:slug', async (req, res) => { 
+//     const { title, content } = req.body;
+
+//     try {
+//         const updatedBlog = await Blog.findOneAndUpdate(
+//             { slug: req.params.slug }, // Find by slug instead of ID
+//             { title, content },
+//             { new: true, runValidators: true }
+//         );
+
+//         if (!updatedBlog) {
+//             return res.status(404).json({ message: 'Blog not found' });
+//         }
+
+//         res.json(updatedBlog);
+//     } catch (err) {
+//         console.error('Update error:', err);
+//         res.status(500).json({ message: 'Server error during blog update' });
+//     }
+// });
+
+
+
 router.post("/:slug/like", auth, ToggleLikeBlog);
 
 router.post("/:slug/comments", auth, createComment);

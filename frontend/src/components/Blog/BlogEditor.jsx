@@ -1,7 +1,7 @@
+import 'react-quill/dist/quill.snow.css';
 import { useState } from 'react';
 import { TextField, Button, Box, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import ReactQuill from "react-quill";
 
 function BlogEditor({ onSubmit, initialData = {} }) {
   console.log('Rendering BlogEditor with initialData:', initialData);
@@ -65,4 +65,12 @@ function BlogEditor({ onSubmit, initialData = {} }) {
   );
 }
 
-export default BlogEditor;
+export default function SafeBlogEditor(props) {
+  try {
+    return <BlogEditor {...props} />;
+  } catch (error) {
+    console.error('BlogEditor error:', error);
+    return <div>Error loading editor</div>;
+  }
+}
+

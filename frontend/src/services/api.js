@@ -12,9 +12,32 @@ api.interceptors.request.use((config) => {
 });
 
 export const getBlogs = (params = {}) => api.get('/blog', { params });
-export const getBlog = (slug) => api.get(`/blog/${slug}`);
+export const getBlog = (slug) => {
+    if (!slug) {
+      console.error('Slug is undefined in getBlog');
+      throw new Error('Invalid slug');
+    }
+    return api.get(`/blog/${slug}`);
+  };
 export const createBlog = (data) => api.post('/blog', data, { headers: { 'Content-Type': 'multipart/form-data' } });
 export const updateBlog = (slug, data) => api.patch(`/blog/${slug}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+
+
+
+
+// export const updateBlog = async (slug, updatedData) => {
+//   try {
+//       const response = await axios.put(`/api/blogs/slug/${slug}`, updatedData);
+//       return response.data;
+//   } catch (error) {
+//       console.error('Update failed:', error);
+//       throw error;
+//   }
+// };
+
+
+
+
 export const deleteBlog = (slug) => api.delete(`/blog/${slug}`);
 export const toggleLike = (slug) => api.post(`/blog/${slug}/like`);
 export const createComment = (slug, content) => api.post(`/blog/${slug}/comments`, { content });

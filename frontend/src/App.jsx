@@ -30,12 +30,26 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
           
-          <Route element={<ProtectedRoute />}>
+          {/* <Route element={<ProtectedRoute />}>
             <Route path="/create-post" element={<CreatePost />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/dashboard/author" element={<AuthorDashboard />} />
             <Route path="/dashboard/admin" element={<AdminDashboard />} />
-          </Route>
+          </Route> */}
+
+<Route element={<ProtectedRoute allowedRoles={['author', 'admin']} />}>
+  <Route path="/create-post" element={<CreatePost />} />
+  <Route path="/profile" element={<Profile />} />
+</Route>
+
+<Route element={<ProtectedRoute allowedRoles={['author']} />}>
+  <Route path="/dashboard/author" element={<AuthorDashboard />} />
+</Route>
+
+<Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+  <Route path="/dashboard/admin" element={<AdminDashboard />} />
+</Route>
+
           
           <Route path="*" element={<NotFound />} />
         </Routes>

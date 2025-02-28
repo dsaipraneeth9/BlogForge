@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Button, Box, Avatar, CircularProgress } fr
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../contexts/AuthContext.jsx';
 
+
 function Header() {
   const { user, logout, loading } = useContext(AuthContext);
   const navigate = useNavigate();

@@ -1,6 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
 import { loginUser, logoutUser, registerUser } from '../services/auth.js';
-import { jwtDecode } from 'jwt-decode'; // Using named export for jwt-decode
 
 export const AuthContext = createContext();
 
@@ -68,32 +67,53 @@ export function AuthProvider({ children }) {
   // Handle login by calling the backend and setting user/token state
   const login = async (credentials) => {
     console.log('Logging in with credentials:', credentials);
-    const { data } = await loginUser(credentials);
-    console.log('Login response:', data);
-    if (!data.token) throw new Error('No token received from server');
-    setUser({ username: data.username, email: data.email, photo: data.photo, role: data.role || 'user' });
-    setToken(data.token);
-    localStorage.setItem('token', data.token);
+    try {
+      const { data } = await loginUser(credentials);
+      console.log('Login response:', data);
+      if (!data.token) throw new Error('No token received from server');
+      setUser({ username: data.username, email: data.email, photo: data.photo, role: data.role || 'user' });
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
   // Handle registration by calling the backend and setting user/token state
   const register = async (formData) => {
-    const { data } = await registerUser(formData);
-    setUser({ username: data.newUser.username, email: data.newUser.email, photo: data.newUser.photo, role: data.newUser.role || 'user' });
-    setToken(data.token);
-    localStorage.setItem('token', data.token);
+    try {
+      const { data } = await registerUser(formData);
+      setUser({ username: data.newUser.username, email: data.newUser.email, photo: data.newUser.photo, role: data.newUser.role || 'user' });
+      setToken(data.token);
+      localStorage.setItem('token', data.token);
+    } catch (error) {
+      console.error('Registration failed:', error);
+      throw error;
+    }
   };
 
   // Handle logout by calling the backend, clearing state, and redirecting
   const logout = async () => {
     try {
-      await logoutUser();
+      console.log('Attempting logout with token in localStorage:', localStorage.getItem('token'));
+      const response = await logoutUser(); // Capture response for debugging
+      console.log('Logout response:', response);
       setUser(null);
       setToken(null);
       localStorage.removeItem('token');
       console.log('Logged out successfully');
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error('Logout failed - Full error:', error);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+      } else {
+        console.error('Error setting up request:', error.message);
+      }
       setUser(null);
       setToken(null);
       localStorage.removeItem('token');

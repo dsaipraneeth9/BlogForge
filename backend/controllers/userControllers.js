@@ -123,6 +123,12 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 });
 
 export const logout = asyncHandler(async (req, res) => {
+    console.log('Logout request - userId:', req.userId, 'Token:', req.headers.authorization);
+    if (!req.userId) {
+        console.warn('No userId found in logout request');
+        res.status(401).json({ message: 'Not authenticated' });
+        return;
+    }
     req.userId = null;
     res.sendStatus(200);
 });
